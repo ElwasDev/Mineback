@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postulaciones Cerradas – MineBack</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e63946;
+    --red-dark: #9b1c1c;
+    --red-glow: rgba(230, 57, 70, 0.4);
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #181818;
+    --border: rgba(230, 57, 70, 0.2);
+    --text: #f0f0f0;
+    --muted: #888;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(230,57,70,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(230,57,70,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(230,57,70,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,10,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1.1rem; color: var(--red); letter-spacing: 2px; }
+  .nav-logo span { color: var(--text); }
+  .nav-user { display: flex; align-items: center; gap: 0.75rem; }
+  .nav-logout { font-size: 0.75rem; color: var(--muted); text-decoration: none; letter-spacing: 1px; border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; transition: color 0.2s, border-color 0.2s; }
+  .nav-logout:hover { color: var(--red); border-color: var(--red); }
+  main {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+  .cerrado-wrapper {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--red-glow); }
+    50%       { box-shadow: 0 0 30px 8px var(--red-glow); }
+  }
+  .cerrado-icon {
+    width: 90px;
+    height: 90px;
+    background: var(--red-dark);
+    border: 2px solid var(--red);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 2.5rem;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  .cerrado-badge {
+    display: inline-block;
+    background: rgba(230,57,70,0.15);
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 1.2rem;
+    text-transform: uppercase;
+  }
+  .cerrado-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .cerrado-title span { color: var(--red); }
+  .cerrado-desc {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cerrado-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .cerrado-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+  .cerrado-card p {
+    font-size: 0.9rem;
+    color: #ccc;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  .cerrado-card p strong { color: var(--red); font-weight: 700; }
+  .btn-discord {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    background: #5865F2;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.9rem 2rem;
+    border-radius: 6px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-discord:hover { background: #4752c4; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Mine<span>Back</span></div>
+  <div class="nav-user">
+    <a href="/logout" class="nav-logout">Salir</a>
+  </div>
+</nav>
+
+<main>
+  <div class="cerrado-wrapper">
+    <div class="cerrado-icon">🔒</div>
+    <div class="cerrado-badge">⛔ Reclutamiento Cerrado</div>
+
+    <h1 class="cerrado-title">Postulaciones<br><span>Cerradas</span></h1>
+    <p class="cerrado-desc">
+      En este momento no estamos aceptando nuevas postulaciones para el Staff Team de MineBack. Mantente atento a nuestro Discord para saber cuándo vuelvan a abrirse.
+    </p>
+
+    <div class="cerrado-card">
+      <p>
+        Cuando las postulaciones vuelvan a abrirse, podrás completar el formulario directamente aquí.<br><br>
+        <strong>Síguenos en Discord</strong> para no perderte el anuncio de reapertura.
+      </p>
+    </div>
+
+    <a href="https://discord.gg/mineback" class="btn-discord">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.031.056a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+      </svg>
+      Unirse al Discord
+    </a>
+  </div>
+</main>
+
+</body>
+</html>
