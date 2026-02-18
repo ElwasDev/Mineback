@@ -31,8 +31,22 @@ DISCORD_AUTH_URL = "https://discord.com/api/oauth2/authorize"
 DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
 DISCORD_USER_URL  = "https://discord.com/api/users/@me"
 
+# URL de imagen de estado pendiente
+IMG_PENDIENTE = "https://media.discordapp.net/attachments/1145130881124667422/1473774273335398524/pendiente_mine.png?ex=69976ec0&is=69961d40&hm=1c0c4ba8c3734d1874a3abc1e39db5c233fa359c9b445b64ae3c57bd6c5a3595&=&format=webp&quality=lossless&width=562&height=562"
+
 def get_redirect_uri():
     return f"{WEB_URL}/callback"
+
+# ─────────────────────────────────────────
+#  ESTADO GLOBAL
+# ─────────────────────────────────────────
+postulaciones_web_pendientes = []
+postulaciones_enviadas = set()   # discord_ids que ya enviaron formulario web
+estado_postulaciones = {"abierto": True}
+
+# Guarda message_id del DM enviado al postulante para poder editarlo después
+# { discord_id (str) : dm_message_id (int) }
+dm_mensajes_postulacion = {}
 
 # ──────────────────────────────────────────
 #  RUTAS WEB
@@ -59,7 +73,6 @@ def login():
 @app_web.route('/callback')
 def callback():
     code = request.args.get("code")
-
     if not code:
         return redirect("/?error=no_code")
 
@@ -73,9 +86,9 @@ def callback():
         }).encode()
 
         headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "DiscordBot (MineBack, 1.0)"
-            }
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "DiscordBot (MineBack, 1.0)"
+        }
         if _requests:
             r = _requests.post(DISCORD_TOKEN_URL, data=data, headers=headers)
             token_data = r.json()
@@ -109,9 +122,6 @@ def callback():
         import traceback
         print(f"OAuth error: {e}")
         print(f"OAuth error detail: {traceback.format_exc()}")
-        try:
-            print(f"OAuth response body: {e.read()}")
-        except: pass
         return redirect("/?error=oauth_failed")
 
 @app_web.route('/logout')
@@ -126,11 +136,24 @@ def me():
         return jsonify({"ok": True, "user": user})
     return jsonify({"ok": False}), 401
 
+@app_web.route('/ya_postulo')
+def ya_postulo():
+    """Devuelve si el usuario ya envió una postulación web."""
+    user = session.get("discord_user")
+    if not user:
+        return jsonify({"enviado": False})
+    enviado = user.get("id") in postulaciones_enviadas
+    return jsonify({"enviado": enviado})
+
 @app_web.route('/enviar', methods=['POST'])
 def recibir_postulacion():
     user = session.get("discord_user")
     if not user:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+
+    # ── Anti-duplicado ──
+    if user.get("id") in postulaciones_enviadas:
+        return jsonify({"ok": False, "error": "ya_postulo"}), 409
 
     data = None
     try:
@@ -148,14 +171,15 @@ def recibir_postulacion():
     data["discord"]      = user.get("username")
     data["discord_id"]   = user.get("id")
     data["discord_name"] = user.get("global_name")
+
+    # Marcar como enviado ANTES de procesar para evitar doble clic
+    postulaciones_enviadas.add(user.get("id"))
     postulaciones_web_pendientes.append(data)
     return jsonify({"ok": True})
 
 def iniciar_servidor_web():
     port = int(os.environ.get('PORT', 5000))
     app_web.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-
-postulaciones_web_pendientes = []
 
 # ─────────────────────────────────────────
 #  BOT DE DISCORD
@@ -184,7 +208,6 @@ except:
     imagenes_config = {"imagen_aceptado": "", "imagen_rechazado": ""}
 
 postulaciones_activas = {}
-estado_postulaciones = {"abierto": True}
 
 def guardar_config():
     pass
@@ -229,29 +252,55 @@ async def enviar_al_canal_revision_web(data):
         description=(
             f"📌 **Discord:** `{discord_tag}` ({discord_name})\n"
             f"🆔 **ID:** `{discord_id}`\n"
-            f"🎂 **Edad:** `{data.get('edad', 'No especificado')}`"
         ),
         color=discord.Color.red(),
         timestamp=datetime.now()
     )
 
-    campos = {
-        "razon":       "❓ ¿Por qué quiere ser staff?",
-        "experiencia": "📂 Experiencia previa",
-        "horas":       "⏰ Disponibilidad diaria",
-        "comandos":    "⌨️ Comandos de moderación",
-        "conflicto":   "⚔️ Manejo de conflictos",
-        "hacks":       "🚫 Protocolo anti-hacks",
-        "extra":       "💬 Información adicional",
-    }
-    for campo, titulo in campos.items():
-        valor = data.get(campo, "").strip()
+    # Agregar todas las respuestas del formulario
+    preguntas = preguntas_data.get("preguntas", [])
+    campos_form = [f"p{i+1}" for i in range(23)]
+    for i, key in enumerate(campos_form):
+        valor = data.get(key, "").strip()
         if valor:
-            embed.add_field(name=titulo, value=valor[:1024], inline=False)
+            titulo = preguntas[i] if i < len(preguntas) else f"Pregunta {i+1}"
+            embed.add_field(name=f"P{i+1}: {titulo[:100]}", value=valor[:1024], inline=False)
 
     embed.set_footer(text="Enviado desde la página web · Verificado con Discord OAuth2")
+
     view = BotonesRevision(int(discord_id) if discord_id else 0, discord_tag)
     await canal_revision.send(embed=embed, view=view)
+
+    # ── Enviar DM al usuario con estado PENDIENTE ──
+    if discord_id:
+        try:
+            miembro = guild.get_member(int(discord_id))
+            if not miembro:
+                miembro = await guild.fetch_member(int(discord_id))
+            if miembro:
+                dm_embed = discord.Embed(
+                    title="<:duda_mineback:1472653801679884333> HEMOS RECIBIDO TU POSTULACION",
+                    description=(
+                        "Esta notificación aclara que la recibimos correctamente.\n\n"
+                        "Hemos recibido tu `postulación para formar parte del equipo staff de MineBack` "
+                        "y se encuentra pendiente de revisión.\n"
+                        "Desde ahora, hasta la resolución de la postulación, pueden pasar días. "
+                        "Por favor, ten paciencia.\n\n"
+                        "> Te notificaremos por este medio en cuanto el equipo tome una decisión.\n\n"
+                        "<a:articulo_mineback:1454888675124052051> **Actualización del estado**\n"
+                        "> Estado actual: `Pendiente`"
+                    ),
+                    color=discord.Color.red(),
+                    timestamp=datetime.now()
+                )
+                dm_embed.set_image(url=IMG_PENDIENTE)
+                dm_embed.set_footer(text="MineBack Staff · Sistema de postulaciones")
+
+                dm_msg = await miembro.send(embed=dm_embed)
+                # Guardar el message_id del DM para editarlo después
+                dm_mensajes_postulacion[str(discord_id)] = dm_msg.id
+        except Exception as e:
+            print(f"No se pudo enviar DM al postulante: {e}")
 
 # ─────────────────────────────────────────
 #  VISTAS / BOTONES
@@ -374,6 +423,39 @@ class BotonesRevision(discord.ui.View):
             canal = discord.utils.get(guild.text_channels, name="resultados-postulaciones")
         return canal
 
+    async def _editar_dm_estado(self, guild, nuevo_estado: str, color: discord.Color, emoji_estado: str):
+        """Edita el DM original del postulante para cambiar el estado."""
+        usuario = guild.get_member(self.user_id)
+        if not usuario:
+            return
+        dm_msg_id = dm_mensajes_postulacion.get(str(self.user_id))
+        if not dm_msg_id:
+            return
+        try:
+            dm_channel = await usuario.create_dm()
+            dm_msg = await dm_channel.fetch_message(dm_msg_id)
+            # Editar el embed existente cambiando el estado
+            embed = dm_msg.embeds[0] if dm_msg.embeds else None
+            if embed:
+                embed_dict = embed.to_dict()
+                # Actualizar descripción con el nuevo estado
+                desc = embed_dict.get("description", "")
+                # Reemplazar la línea de estado
+                import re
+                desc = re.sub(
+                    r"> Estado actual: `[^`]+`",
+                    f"> Estado actual: `{nuevo_estado}` {emoji_estado}",
+                    desc
+                )
+                embed_dict["description"] = desc
+                embed_dict["color"] = color.value
+                # Quitar imagen de pendiente si fue aceptado/rechazado
+                embed_dict.pop("image", None)
+                new_embed = discord.Embed.from_dict(embed_dict)
+                await dm_msg.edit(embed=new_embed)
+        except Exception as e:
+            print(f"No se pudo editar el DM: {e}")
+
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="<:si_mineback:1455742911739199724>")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild     = interaction.guild
@@ -388,14 +470,26 @@ class BotonesRevision(discord.ui.View):
                 e.set_image(url=imagenes_config["imagen_aceptado"])
             await canal_res.send(embed=e)
 
+        # Enviar DM de resultado aceptado
         if usuario:
             try:
-                e = discord.Embed(title="ACTUALIZACIÓN DE TU POSTULACIÓN",
-                    description="¡Tu postulación fue **aceptada**! Te contactaremos pronto. 🎊",
-                    color=discord.Color.red())
-                e.add_field(name="Estado", value="> `Aceptado` ✅")
-                await usuario.send(embed=e)
-            except: pass
+                e_dm = discord.Embed(
+                    title="<:si_mineback:1455742911739199724> ACTUALIZACION DE TU POSTULACION",
+                    description=(
+                        "¡Tu postulación fue **aceptada**! ¡Bienvenido al equipo! 🎊\n\n"
+                        "<a:articulo_mineback:1454888675124052051> **Actualización del estado**\n"
+                        "> Estado actual: `Aceptado` ✅"
+                    ),
+                    color=discord.Color.green(),
+                    timestamp=datetime.now()
+                )
+                e_dm.set_footer(text="MineBack Staff · Sistema de postulaciones")
+                await usuario.send(embed=e_dm)
+            except:
+                pass
+
+        # Editar el DM original (pendiente) para mostrar nuevo estado
+        await self._editar_dm_estado(guild, "Aceptado", discord.Color.green(), "✅")
 
         embed = interaction.message.embeds[0]
         embed.title = "✅ POSTULACIÓN ACEPTADA"
@@ -417,14 +511,26 @@ class BotonesRevision(discord.ui.View):
                 e.set_image(url=imagenes_config["imagen_rechazado"])
             await canal_res.send(embed=e)
 
+        # Enviar DM de resultado rechazado
         if usuario:
             try:
-                e = discord.Embed(title="ACTUALIZACIÓN DE TU POSTULACIÓN",
-                    description="Tu postulación fue **rechazada**. Puedes reintentar en 14 días. 💪",
-                    color=discord.Color.red())
-                e.add_field(name="Estado", value="> `Rechazado` ❌")
-                await usuario.send(embed=e)
-            except: pass
+                e_dm = discord.Embed(
+                    title="<:No_mineback:1455742851601268868> ACTUALIZACION DE TU POSTULACION",
+                    description=(
+                        "Tu postulación fue **rechazada**. Puedes reintentar en 14 días. 💪\n\n"
+                        "<a:articulo_mineback:1454888675124052051> **Actualización del estado**\n"
+                        "> Estado actual: `Rechazado` ❌"
+                    ),
+                    color=discord.Color.red(),
+                    timestamp=datetime.now()
+                )
+                e_dm.set_footer(text="MineBack Staff · Sistema de postulaciones")
+                await usuario.send(embed=e_dm)
+            except:
+                pass
+
+        # Editar el DM original (pendiente) para mostrar nuevo estado
+        await self._editar_dm_estado(guild, "Rechazado", discord.Color.red(), "❌")
 
         embed = interaction.message.embeds[0]
         embed.title = "❌ POSTULACIÓN RECHAZADA"
@@ -473,13 +579,29 @@ class ConfirmarPostulacion(discord.ui.View):
 
         await interaction.response.send_message("✅ **¡Postulación enviada!** Este canal se cerrará en 5 segundos.")
 
+        # Enviar DM con estado pendiente (postulación por chat)
         try:
-            e = discord.Embed(title="HEMOS RECIBIDO TU POSTULACIÓN",
-                description="Tu postulación está **pendiente de revisión**. Te notificaremos pronto.",
-                color=discord.Color.red())
-            e.add_field(name="Estado", value="> `Pendiente`")
-            await interaction.user.send(embed=e)
-        except: pass
+            dm_embed = discord.Embed(
+                title="<:duda_mineback:1472653801679884333> HEMOS RECIBIDO TU POSTULACION",
+                description=(
+                    "Esta notificación aclara que la recibimos correctamente.\n\n"
+                    "Hemos recibido tu `postulación para formar parte del equipo staff de MineBack` "
+                    "y se encuentra pendiente de revisión.\n"
+                    "Desde ahora, hasta la resolución de la postulación, pueden pasar días. "
+                    "Por favor, ten paciencia.\n\n"
+                    "> Te notificaremos por este medio en cuanto el equipo tome una decisión.\n\n"
+                    "<a:articulo_mineback:1454888675124052051> **Actualización del estado**\n"
+                    "> Estado actual: `Pendiente`"
+                ),
+                color=discord.Color.red(),
+                timestamp=datetime.now()
+            )
+            dm_embed.set_image(url=IMG_PENDIENTE)
+            dm_embed.set_footer(text="MineBack Staff · Sistema de postulaciones")
+            dm_msg = await interaction.user.send(embed=dm_embed)
+            dm_mensajes_postulacion[str(interaction.user.id)] = dm_msg.id
+        except Exception as e:
+            print(f"No se pudo enviar DM (chat): {e}")
 
         del postulaciones_activas[self.user_id]
         await asyncio.sleep(5)
