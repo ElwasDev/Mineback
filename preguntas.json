@@ -1,12 +1,27 @@
 {
     "preguntas": [
-        "¿Cuál es tu edad y fecha de nacimiento exacta?",
-        "¿Por qué quieres ser staff en MineBack?",
-        "¿Qué experiencia tienes como staff en otros servidores?",
-        "¿Cuánto tiempo puedes dedicar diariamente al servidor?",
-        "¿Cómo manejarías una situación de conflicto entre jugadores?",
-        "¿Qué harías si descubres a un jugador usando hacks?",
-        "¿Conoces los comandos básicos de moderación?",
-        "¿Qué cualidades crees que debe tener un buen staff?"
+        "¿Nombre y Edad? (Por favor poner tu nombre completo y tu edad)",
+        "¿Cuál es tu usuario de Discord y tu ID?",
+        "¿Eres Premium? (SI/NO)",
+        "¿Eres jugador de Java o Bedrock?",
+        "¿De qué país eres?",
+        "¿Cuánto tiempo le podrías dedicar al servidor de MineBack?",
+        "¿Tienes experiencia siendo staff en otro servidor? Si es así, indícanos el rango, servidor y motivo por el que ya no formas parte del mismo.",
+        "¿Por qué quieres formar parte del Staff Team?",
+        "¿Hace cuánto tiempo juegas MineBack | Network?",
+        "¿Mencióname al menos 3 comandos básicos que usa un staff? (no cuenta /ban /tp /kick /mute /warn)",
+        "¿Hace cuánto tiempo juegas Minecraft?",
+        "Califica tu Ortografía & Madurez del 1 al 10.",
+        "¿Cuáles serían tus aspiraciones en el Staff Team?",
+        "¿Por qué crees que deberíamos elegirte a ti y no a otro postulante?",
+        "¿Sabes qué es Spam? Si es así, explica qué significa este término.",
+        "¿Qué harías si encuentras un Hacker en el servidor, pero no tienes el rango para sancionarlo?",
+        "¿Sabes qué es Flood? Si es así, indícanos qué significa este término.",
+        "Supongamos que un Staff empieza a abusar de sus permisos. ¿Qué harías en esa situación?",
+        "¿Qué harías en caso de que un usuario abra un ticket para reportar un bug?",
+        "¿Qué es una ScreenShare?",
+        "Menciona los programas que utilizarías en una SS y cómo los usarías.",
+        "Menciona el nombre de al menos 3 Ghost Client.",
+        "¿Cuál es la diferencia entre una Macro y un AutoClick?"
     ]
 }
