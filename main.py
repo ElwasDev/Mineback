@@ -95,7 +95,12 @@ def callback():
         return redirect("/")
 
     except Exception as e:
+        import traceback
         print(f"OAuth error: {e}")
+        print(f"OAuth error detail: {traceback.format_exc()}")
+        try:
+            print(f"OAuth response body: {e.read()}")
+        except: pass
         return redirect("/?error=oauth_failed")
 
 @app_web.route('/logout')
