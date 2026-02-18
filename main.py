@@ -40,24 +40,20 @@ def index():
 
 @app_web.route('/login')
 def login():
-    state = secrets.token_urlsafe(16)
-    session["oauth_state"] = state
     params = urllib.parse.urlencode({
         "client_id":     DISCORD_CLIENT_ID,
         "redirect_uri":  get_redirect_uri(),
         "response_type": "code",
         "scope":         "identify",
-        "state":         state,
     })
     return redirect(f"{DISCORD_AUTH_URL}?{params}")
 
 @app_web.route('/callback')
 def callback():
-    code  = request.args.get("code")
-    state = request.args.get("state")
+    code = request.args.get("code")
 
-    if not code or state != session.get("oauth_state"):
-        return redirect("/?error=state_mismatch")
+    if not code:
+        return redirect("/?error=no_code")
 
     try:
         data = urllib.parse.urlencode({
@@ -94,7 +90,6 @@ def callback():
             "global_name": user_data.get("global_name") or user_data.get("username"),
             "avatar":      user_data.get("avatar"),
         }
-        session.pop("oauth_state", None)
         return redirect("/")
 
     except Exception as e:
