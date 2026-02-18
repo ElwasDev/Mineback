@@ -3,10 +3,10 @@ from discord.ext import commands
 from discord import app_commands
 import asyncio
 import json
+import os
 from datetime import datetime, timedelta
 from flask import Flask, send_from_directory, jsonify, request
 import threading
-import os
 
 # ─────────────────────────────────────────
 #  SERVIDOR WEB (Flask)
@@ -40,11 +40,14 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-try:
-    with open('config.json', 'r', encoding='utf-8') as f:
-        config = json.load(f)
-except:
-    config = {"token": "", "categoria_postulaciones_id": None, "canal_revision_id": None, "canal_resultados_id": None}
+# ── Configuración desde variables de entorno ──
+TOKEN = os.environ.get("TOKEN", "")
+config = {
+    "token": TOKEN,
+    "categoria_postulaciones_id": int(os.environ.get("CATEGORIA_POSTULACIONES_ID", 0)) or None,
+    "canal_revision_id":          int(os.environ.get("CANAL_REVISION_ID", 0)) or None,
+    "canal_resultados_id":        int(os.environ.get("CANAL_RESULTADOS_ID", 0)) or None,
+}
 
 with open('preguntas.json', 'r', encoding='utf-8') as f:
     preguntas_data = json.load(f)
@@ -58,8 +61,8 @@ except:
 postulaciones_activas = {}
 
 def guardar_config():
-    with open('config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+    # Ya no se guarda en archivo, los cambios de IDs solo viven en memoria
+    pass
 
 # ─────────────────────────────────────────
 #  TAREA: procesar postulaciones web
@@ -89,7 +92,6 @@ async def enviar_al_canal_revision_web(data):
         try:
             canal_revision = await guild.create_text_channel(name="postulaciones-staff")
             config["canal_revision_id"] = canal_revision.id
-            guardar_config()
         except:
             return
 
@@ -127,12 +129,10 @@ async def enviar_al_canal_revision_web(data):
 class BotonPostular(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        # Botón link que abre la web
-        # ⚠️ Cambia la URL por tu IP o dominio cuando el bot esté en un servidor
         self.add_item(discord.ui.Button(
             label="Postularse (Web)",
             style=discord.ButtonStyle.link,
-            url="http://TU_IP_AQUI:5000",
+            url=os.environ.get("WEB_URL", "http://localhost:5000"),
             emoji="🌐"
         ))
 
@@ -152,7 +152,6 @@ class BotonPostular(discord.ui.View):
                 try:
                     categoria = await guild.create_category("📝 Postulaciones")
                     config["categoria_postulaciones_id"] = categoria.id
-                    guardar_config()
                 except Exception as e:
                     await interaction.response.send_message(f"❌ Error: {e}", ephemeral=True)
                     return
@@ -328,7 +327,6 @@ class ConfirmarPostulacion(discord.ui.View):
                 try:
                     canal_revision = await guild.create_text_channel(name="postulaciones-staff")
                     config["canal_revision_id"] = canal_revision.id
-                    guardar_config()
                 except: pass
 
         if canal_revision:
@@ -377,7 +375,7 @@ class ConfirmarPostulacion(discord.ui.View):
 @bot.event
 async def on_ready():
     print(f'✅ Bot conectado como {bot.user}')
-    print(f'🌐 Página web en http://localhost:5000')
+    print(f'🌐 Página web activa')
     try:
         synced = await bot.tree.sync()
         print(f'✅ {len(synced)} comandos sincronizados')
@@ -454,15 +452,14 @@ async def ayuda_postulaciones(interaction: discord.Interaction):
 #  ARRANQUE
 # ─────────────────────────────────────────
 if __name__ == "__main__":
-    if not config.get("token"):
-        print("❌ ERROR: Configura el token en config.json")
+    if not TOKEN:
+        print("❌ ERROR: Variable de entorno TOKEN no configurada.")
     else:
         hilo_web = threading.Thread(target=iniciar_servidor_web, daemon=True)
         hilo_web.start()
         try:
-            bot.run(config["token"])
+            bot.run(TOKEN)
         except discord.LoginFailure:
             print("❌ Token inválido.")
         except Exception as e:
-
             print(f"❌ ERROR: {e}")
