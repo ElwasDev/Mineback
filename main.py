@@ -452,8 +452,10 @@ async def ayuda_postulaciones(interaction: discord.Interaction):
 #  ARRANQUE
 # ─────────────────────────────────────────
 if __name__ == "__main__":
-    TOKEN = os.environ.get("TOKEN", "").strip()
+    TOKEN = os.environ.get("TOKEN") or os.environ.get("token") or ""
+    TOKEN = TOKEN.strip()
     print(f"DEBUG: TOKEN existe={bool(TOKEN)}, largo={len(TOKEN)}")
+    print(f"DEBUG ENV keys: {list(os.environ.keys())}")
     if not TOKEN:
         print("❌ ERROR: Variable de entorno TOKEN no configurada.")
     else:
@@ -465,3 +467,4 @@ if __name__ == "__main__":
             print("❌ Token inválido.")
         except Exception as e:
             print(f"❌ ERROR: {e}")
+
