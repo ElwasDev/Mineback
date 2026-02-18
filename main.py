@@ -7,6 +7,10 @@ import os
 import secrets
 import urllib.parse
 import urllib.request
+try:
+    import requests as _requests
+except ImportError:
+    _requests = None
 from datetime import datetime, timedelta
 from flask import Flask, send_from_directory, jsonify, request, redirect, session
 import threading
@@ -66,25 +70,30 @@ def callback():
             "redirect_uri":  get_redirect_uri(),
         }).encode()
 
-        req = urllib.request.Request(
-            DISCORD_TOKEN_URL,
-            data=data,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req) as resp:
-            token_data = json.loads(resp.read())
+        headers = {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "DiscordBot (MineBack, 1.0)"
+            }
+        if _requests:
+            r = _requests.post(DISCORD_TOKEN_URL, data=data, headers=headers)
+            token_data = r.json()
+        else:
+            req = urllib.request.Request(DISCORD_TOKEN_URL, data=data, headers=headers, method="POST")
+            with urllib.request.urlopen(req) as resp:
+                token_data = json.loads(resp.read())
 
         access_token = token_data.get("access_token")
         if not access_token:
+            print(f"No access token, response: {token_data}")
             return redirect("/?error=no_token")
 
-        req2 = urllib.request.Request(
-            DISCORD_USER_URL,
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-        with urllib.request.urlopen(req2) as resp2:
-            user_data = json.loads(resp2.read())
+        if _requests:
+            r2 = _requests.get(DISCORD_USER_URL, headers={"Authorization": f"Bearer {access_token}", "User-Agent": "DiscordBot (MineBack, 1.0)"})
+            user_data = r2.json()
+        else:
+            req2 = urllib.request.Request(DISCORD_USER_URL, headers={"Authorization": f"Bearer {access_token}"})
+            with urllib.request.urlopen(req2) as resp2:
+                user_data = json.loads(resp2.read())
 
         session["discord_user"] = {
             "id":          user_data.get("id"),
