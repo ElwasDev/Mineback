@@ -145,7 +145,7 @@
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   .hero-badge {
     display: inline-block;
-    background: rgba(230,57,70,0.15); border: 1px solid #fff; color: #fff;
+    background: rgba(230,57,70,0.15); border: 1px solid var(--red); color: var(--red);
     font-family: 'Orbitron', monospace; font-size: 0.65rem; letter-spacing: 3px;
     padding: 4px 14px; border-radius: 2px; margin-bottom: 1.2rem; text-transform: uppercase;
   }
@@ -406,34 +406,76 @@
 
       if (data.ok && data.user) {
         const u = data.user;
-
-        // Construir URL de avatar de Discord
         if (u.avatar) {
           avatar.src = `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=64`;
         } else {
-          // Avatar por defecto de Discord (basado en el discriminador)
           const defaultIndex = Number(BigInt(u.id) >> 22n) % 6;
           avatar.src = `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
         }
-
-        avatar.onerror = () => {
-          avatar.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
-        };
-
+        avatar.onerror = () => { avatar.src = `https://cdn.discordapp.com/embed/avatars/0.png`; };
         username.textContent = u.global_name || u.username;
-
-        // Ocultar skeleton, mostrar widget
         skeleton.style.display = 'none';
         widget.classList.add('loaded');
       } else {
-        // No autenticado → redirigir
         window.location.href = '/';
       }
     } catch (e) {
       skeleton.style.display = 'none';
-      // Si falla silenciosamente, igual mostrar widget vacío
     }
   })();
+
+  // ── Verificar si ya envio postulacion ──
+  (async () => {
+    try {
+      const res  = await fetch('/ya_postulo');
+      const json = await res.json();
+      if (json.enviado) mostrarPantallaYaEnviada();
+    } catch (e) {}
+  })();
+
+  function mostrarPantallaYaEnviada() {
+    const mainEl = document.querySelector('main');
+    mainEl.innerHTML = `
+      <div style="text-align:center; padding: 4rem 1.5rem; animation: fadeDown 0.6s ease both;">
+        <div style="
+          display:inline-flex; align-items:center; justify-content:center;
+          width:90px; height:90px; border-radius:50%;
+          background: rgba(230,57,70,0.1); border: 2px solid var(--red);
+          font-size:2.5rem; margin-bottom:1.5rem;
+          box-shadow: 0 0 30px rgba(230,57,70,0.4);
+        ">📬</div>
+        <div style="
+          display:inline-block; background:rgba(230,57,70,0.15);
+          border:1px solid var(--red); color:var(--red);
+          font-family:'Orbitron',monospace; font-size:0.6rem; letter-spacing:3px;
+          padding:4px 14px; border-radius:2px; margin-bottom:1.2rem; text-transform:uppercase; display:block;
+        ">Postulacion Registrada</div>
+        <h2 style="font-family:'Orbitron',monospace; font-size:clamp(1.4rem,4vw,2.2rem); font-weight:900; margin-bottom:1rem; line-height:1.2;">
+          Tu postulacion ya fue<br><span style="color:var(--red);">enviada correctamente</span>
+        </h2>
+        <p style="color:#888; font-size:1rem; font-weight:300; max-width:480px; margin:0 auto 2rem; line-height:1.7;">
+          Hemos recibido tu formulario y esta siendo revisado por el equipo.<br>
+          Recibiras una notificacion por Discord cuando haya una decision.
+        </p>
+        <div style="
+          background:#111; border:1px solid rgba(230,57,70,0.2); border-radius:10px;
+          padding:1.5rem 2rem; max-width:420px; margin:0 auto;
+          display:flex; align-items:center; gap:1rem; text-align:left;
+          position:relative; overflow:hidden;
+        ">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#e63946,transparent);"></div>
+          <div style="font-size:2rem; flex-shrink:0;">⏳</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace; font-size:0.7rem; letter-spacing:2px; color:#e63946; text-transform:uppercase; margin-bottom:4px;">Estado actual</div>
+            <div style="font-size:1rem; font-weight:600; color:#eee;">Pendiente de revision</div>
+            <div style="font-size:0.82rem; color:#888; font-weight:300; margin-top:2px;">La revision puede tardar varios dias.</div>
+          </div>
+        </div>
+        <p style="margin-top:2rem; font-size:0.8rem; color:#888;">
+          Crees que hay un error? Contacta a un administrador en Discord.
+        </p>
+      </div>`;
+  }
 
   // ── Formulario ──
   const form  = document.getElementById("postulacion-form");
@@ -441,15 +483,15 @@
   const toast = document.getElementById("toast");
 
   function showToast(type, title, msg) {
-    toast.className = `toast ${type}`;
-    document.getElementById("toast-icon").textContent = type === "success" ? "✅" : "❌";
+    toast.className = "toast " + type;
+    document.getElementById("toast-icon").textContent  = type === "success" ? "?" : "?";
     document.getElementById("toast-title").textContent = title;
     document.getElementById("toast-msg").textContent   = msg;
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 5000);
   }
 
-  form.addEventListener("submit", async (e) => {
+  form && form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
 
@@ -465,18 +507,18 @@
       const json = await res.json();
 
       if (json.ok) {
-        showToast("success", "¡Postulación enviada!", "El equipo de MineBack revisará tu solicitud pronto.");
-        form.reset();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        mostrarPantallaYaEnviada();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (json.error === "ya_postulo") {
+        mostrarPantallaYaEnviada();
       } else {
         throw new Error(json.error || "Error desconocido");
       }
     } catch (err) {
-      showToast("error", "Error al enviar", "No se pudo enviar. Asegúrate de que el bot está activo.");
+      showToast("error", "Error al enviar", "No se pudo enviar. Asegurate de que el bot esta activo.");
+      btn.classList.remove("loading");
+      btn.textContent = "Enviar Postulacion";
     }
-
-    btn.classList.remove("loading");
-    btn.textContent = "Enviar Postulación →";
   });
 </script>
 </body>
