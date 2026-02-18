@@ -408,35 +408,41 @@ async def on_message(message):
 @bot.tree.command(name="setup_postulaciones", description="Configura el sistema de postulaciones (Solo administradores)")
 @app_commands.checks.has_permissions(administrator=True)
 async def setup_postulaciones(interaction: discord.Interaction):
-    emoji_map = {
-        "mineback": "<:mineback:1454904946452598794>",
-        "sword": "<:sword_mineback:1426448879272071262>",
-        "survival": "<:Survival_MineBack:1473477865713570056>",
-        "cohete": "<:cohete_mineback:1455743005787951294>",
-        "conexion": "<:Con_conex:1473479504365228084>",
-        "shop": "<:asassa:1470495966967890002>"
-    }
     embed = discord.Embed(
         description=(
-            f"# {emoji_map['mineback']} - ¡POSTULACIONES ABIERTAS!\n\n"
-            f"Postúlate siendo parte del Staff-Team. {emoji_map['sword']}\n\n"
-            "🌐 **Opción Web:** Rellena el formulario en nuestra página.\n"
-            "💬 **Opción Chat:** Responde las preguntas en Discord.\n\n"
-            "# Requisitos:\n"
-            f"{emoji_map['survival']}: Mínimo 14 Años.\n"
-            f"{emoji_map['survival']}: Ser premium.\n"
-            f"{emoji_map['survival']}: Historial limpio.\n"
-            f"{emoji_map['survival']}: No ser staff en otro servidor.\n"
-            f"{emoji_map['survival']}: Buena ortografía y madurez.\n\n"
-            f"{emoji_map['cohete']} **¡Buena suerte!**\n\n"
-            f"{emoji_map['mineback']} | mineback.xyz\n"
-            f"{emoji_map['conexion']} | Puerto: 19132\n"
-            f"{emoji_map['shop']} | https://tienda.mineback.xyz/"
+            "# <:mineback:1454904946452598794> - ¡POSTULACIONES ABIERTAS!\n"
+            "¿Estás interesado en ser parte del Staff-Team?\n"
+            "Si es así, no esperes más. Esta es tu oportunidad para intentar ser parte del Staff-Team. Postúlate ahora dando clic en el botón Azul. <:sword_mineback:1426448879272071262>\n\n"
+            "**¿Cómo me postulo?**\n"
+            "Al dar clic en el botón se creará un canal privado donde deberás responder todas las preguntas del formulario.\n"
+            "Una vez completadas todas las preguntas deberás dar clic en \"Enviar postulación\" y listo, tu postulación se enviará.\n\n"
+            "# Requisitos a cumplir:\n"
+            "<:Survival_MineBack:1473477865713570056>: Tener mínimo 14 Años. (Pueden haber excepciones)\n"
+            "<:Survival_MineBack:1473477865713570056>: Ser premium.\n"
+            "<:Survival_MineBack:1473477865713570056>: Contar con un historial limpio en el servidor. (No tener sanciones graves recientemente)\n"
+            "<:Survival_MineBack:1473477865713570056>: No ser staff en otro servidor.\n"
+            "<:Survival_MineBack:1473477865713570056>: Tener una buena ortografía.\n"
+            "<:Survival_MineBack:1473477865713570056>: Ser maduro.\n\n"
+            "¿Cumples los requisitos?\n"
+            "<:cohete_mineback:1455743005787951294> - **¡Postúlate dando clic en el botón de abajo!**\n"
+            "¡Te deseamos suerte en tu postulación!\n\n"
+            "<:mineback:1454904946452598794> | mineback.xyz (( 1.16x - 1.21x ))\n"
+            "<:Con_conex:1473479504365228084> | Puerto: 19132\n"
+            "<:asassa:1470495966967890002> | Tienda: https://tienda.mineback.xyz/ (( -75% OFF ))"
         ),
         color=discord.Color.red()
     )
+    
+    view = discord.ui.View(timeout=None)
+    view.add_item(discord.ui.Button(
+        label="Postularse",
+        style=discord.ButtonStyle.link,
+        url="https://minebackpostulaciones.up.railway.app/",
+        emoji="🌐"
+    ))
+    
     await interaction.response.send_message("✅ Configurado!", ephemeral=True)
-    await interaction.channel.send(embed=embed, view=BotonPostular())
+    await interaction.channel.send(embed=embed, view=view)
 
 
 @bot.tree.command(name="ayuda_postulaciones", description="Ayuda sobre el sistema")
@@ -467,4 +473,3 @@ if __name__ == "__main__":
             print("❌ Token inválido.")
         except Exception as e:
             print(f"❌ ERROR: {e}")
-
