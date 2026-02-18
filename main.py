@@ -514,11 +514,21 @@ class BotonesRevision(discord.ui.View):
         usuario   = guild.get_member(self.user_id)
 
         if canal_res:
-            e = discord.Embed(title="[RESULTADO] Postulación rechazada",
-                description=f"{usuario.mention if usuario else self.username} no fue seleccionado. Puede reintentar en 14 días.",
-                color=discord.Color.red(), timestamp=datetime.now())
-            if imagenes_config.get("imagen_rechazado"):
-                e.set_image(url=imagenes_config["imagen_rechazado"])
+            nombre = usuario.mention if usuario else f"**{self.username}**"
+            e = discord.Embed(
+                title=f"[RESULTADO] La postulación de {self.username} fue rechazada en el Staff de MineBack",
+                description=(
+                    f"{nombre} tu postulación para formar parte del Staff de MineBack ha sido revisada, "
+                    "y en esta ocasión no ha sido aprobada.\n\n"
+                    "Agradecemos el tiempo, esfuerzo e interés que mostraste al querer formar parte del equipo de MineBack.\n\n"
+                    "> ➡ Recuerda: un rechazo no define tu capacidad. Siempre puedes mejorar, aprender y volver a intentarlo en el futuro.\n"
+                    "> Cada experiencia es una oportunidad para crecer.\n\n"
+                    'Un día un sabio dijo... "Los grandes logros nacen después de muchos intentos."'
+                ),
+                color=discord.Color.red(),
+                timestamp=datetime.now()
+            )
+            e.set_image(url="https://media.discordapp.net/attachments/1472406542824378490/1473783165616263344/rechazado.jpg?ex=69977708&is=69962588&hm=14bf8058f83868ed48178bb37d2fa6429f7472fdbe0f8bd324684ca41a8b6254&=&format=webp&width=842&height=562")
             await canal_res.send(embed=e)
 
         # Enviar DM de resultado rechazado
@@ -639,7 +649,39 @@ class ConfirmarPostulacion(discord.ui.View):
 @app_commands.checks.has_permissions(administrator=True)
 async def abrir_postulaciones(interaction: discord.Interaction):
     estado_postulaciones["abierto"] = True
-    embed = discord.Embed(title="✅ Postulaciones abiertas", description="Las postulaciones de staff están ahora **abiertas**.", color=discord.Color.green())
+    postulaciones_enviadas.clear()
+    dm_mensajes_postulacion.clear()
+    embed = discord.Embed(
+        title="✅ Postulaciones abiertas",
+        description=(
+            "Las postulaciones de staff están ahora **abiertas**.\n\n"
+            "🔄 El historial de postulaciones fue reiniciado — todos pueden volver a postularse."
+        ),
+        color=discord.Color.green()
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="limpiar_postulacion", description="Permite a un usuario volver a postularse (resetea su postulación)")
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(usuario="El usuario al que quieres resetear la postulación")
+async def limpiar_postulacion(interaction: discord.Interaction, usuario: discord.Member):
+    uid = str(usuario.id)
+    eliminado = uid in postulaciones_enviadas
+    postulaciones_enviadas.discard(uid)
+    dm_mensajes_postulacion.pop(uid, None)
+
+    if eliminado:
+        embed = discord.Embed(
+            title="🔄 Postulación reseteada",
+            description=f"{usuario.mention} puede volver a postularse.",
+            color=discord.Color.green()
+        )
+    else:
+        embed = discord.Embed(
+            title="⚠️ Sin postulación registrada",
+            description=f"{usuario.mention} no tenía ninguna postulación enviada.",
+            color=discord.Color.orange()
+        )
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="cerrar_postulaciones", description="Cierra las postulaciones de staff")
