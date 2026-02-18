@@ -463,11 +463,21 @@ class BotonesRevision(discord.ui.View):
         usuario   = guild.get_member(self.user_id)
 
         if canal_res:
-            e = discord.Embed(title="[INGRESO] Postulante admitido en el Staff",
-                description=f"{usuario.mention if usuario else self.username} ha sido **aceptado**. ¡Bienvenido! 🎊",
-                color=discord.Color.red(), timestamp=datetime.now())
-            if imagenes_config.get("imagen_aceptado"):
-                e.set_image(url=imagenes_config["imagen_aceptado"])
+            nombre = usuario.mention if usuario else f"**{self.username}**"
+            e = discord.Embed(
+                title=f"[INGRESO] El postulante {self.username} fue admitido en el Staff de mineback",
+                description=(
+                    f"{nombre} fue admitido en el Staff de mineback\n\n"
+                    "Al igual que los demás postulantes y staff, esperamos que logre alcanzar sus metas, "
+                    "y demostrar lo mucho que vale dentro de Mineback.\n\n"
+                    "> ➡ Recuerda que entrar al staff es solo el comienzo. Hay muchas etapas que aprobar una vez logres entrar.\n"
+                    "> ¡Mantenerse y crecer es lo difícil!\n\n"
+                    'Un día un sabio dijo... "*Las pequeñas cosas son las responsables de los **grandes cambios**"'
+                ),
+                color=discord.Color.red(),
+                timestamp=datetime.now()
+            )
+            e.set_image(url="https://media.discordapp.net/attachments/1145130881124667422/1473781003116871964/admitivo.png?ex=69977504&is=69962384&hm=28c70011e74532ebe684585222949724f4e2dbb2599ff568a2a9c60ea19aeeab&=&format=webp&quality=lossless&width=842&height=562")
             await canal_res.send(embed=e)
 
         # Enviar DM de resultado aceptado
