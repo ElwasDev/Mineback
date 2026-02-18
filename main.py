@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timedelta
 from flask import Flask, send_from_directory, jsonify, request
 import threading
+import os
 
 # ─────────────────────────────────────────
 #  SERVIDOR WEB (Flask)
@@ -25,7 +26,8 @@ def recibir_postulacion():
     return jsonify({"ok": True})
 
 def iniciar_servidor_web():
-    app_web.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    port = int(os.environ.get('PORT', 5000))
+    app_web.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 postulaciones_web_pendientes = []
 
@@ -462,4 +464,5 @@ if __name__ == "__main__":
         except discord.LoginFailure:
             print("❌ Token inválido.")
         except Exception as e:
+
             print(f"❌ ERROR: {e}")
