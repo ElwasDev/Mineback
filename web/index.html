@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Postulaciones Staff — MineBack</title>
+<title>Postulaciones Staff – MineBack</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -16,6 +16,8 @@
     --border: rgba(230, 57, 70, 0.2);
     --text: #f0f0f0;
     --muted: #888;
+    --discord: #5865F2;
+    --discord-hover: #4752C4;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -48,6 +50,109 @@
     pointer-events: none;
     z-index: 0;
   }
+
+  /* ── PANTALLA DE LOGIN ── */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+  #login-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(230,57,70,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(230,57,70,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .login-card {
+    position: relative;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.8rem 2.5rem;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px var(--red-glow);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 16px 16px 0 0;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+  .login-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--red);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+    box-shadow: 0 8px 24px var(--red-glow);
+  }
+  .login-card h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin-bottom: 0.4rem;
+    color: var(--text);
+  }
+  .login-card h2 span { color: var(--red); }
+  .login-card p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+  }
+  .btn-discord {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    background: var(--discord);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.9rem 1.5rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .btn-discord:hover {
+    background: var(--discord-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(88,101,242,0.4);
+  }
+  .btn-discord:active { transform: translateY(0); }
+  .btn-discord svg { width: 20px; height: 20px; fill: white; flex-shrink: 0; }
+
+  /* ── CONTENIDO PRINCIPAL (oculto hasta login) ── */
+  #main-content { display: none; }
+
   nav {
     position: sticky; top: 0; z-index: 100;
     background: rgba(10,10,10,0.9);
@@ -58,8 +163,31 @@
   }
   .nav-logo { font-family: 'Orbitron', monospace; font-weight: 900; font-size: 1.1rem; color: var(--red); letter-spacing: 2px; }
   .nav-logo span { color: var(--text); }
+  .nav-right { display: flex; align-items: center; gap: 1rem; }
   .nav-breadcrumb { font-size: 0.85rem; color: var(--muted); letter-spacing: 1px; }
   .nav-breadcrumb a { color: var(--red); text-decoration: none; }
+  .nav-user {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.9rem; font-weight: 600; color: var(--text);
+  }
+  .nav-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--red); object-fit: cover;
+  }
+  .nav-avatar-placeholder {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--red); display: flex; align-items: center;
+    justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff;
+    border: 2px solid var(--red-dark);
+  }
+  .btn-logout {
+    font-size: 0.75rem; color: var(--muted); background: none;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+    padding: 3px 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-logout:hover { color: var(--red); border-color: var(--red); }
+
   main { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
   .hero { text-align: center; margin-bottom: 3rem; animation: fadeDown 0.6s ease both; }
   @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -89,7 +217,7 @@
   .form-header p { color: var(--muted); font-size: 0.9rem; font-weight: 300; }
   .field-group { margin-bottom: 1.6rem; }
   label { display: block; font-size: 0.82rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #ccc; margin-bottom: 0.5rem; }
-  label .num { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; background: var(--red); color: #fff; font-size: 0.65rem; border-radius: 3px; margin-right: 0.5rem; font-family: 'Orbitron', monospace; padding: 0 4px; }
+  label .num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--red); color: #fff; font-size: 0.65rem; border-radius: 3px; margin-right: 0.5rem; font-family: 'Orbitron', monospace; }
   input[type="text"], textarea, select {
     width: 100%; background: var(--bg3); border: 1px solid rgba(230,57,70,0.25);
     border-radius: 5px; padding: 0.8rem 1rem; color: var(--text);
@@ -99,7 +227,6 @@
   input:focus, textarea:focus, select:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-glow); }
   textarea { min-height: 90px; }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
   .form-footer { margin-top: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .form-note { font-size: 0.82rem; color: var(--muted); font-weight: 300; }
   .btn-submit {
@@ -126,9 +253,8 @@
   .toast.success .toast-title { color: #34c759; }
   .toast.error { border-color: rgba(230,57,70,0.5); }
   .toast.error .toast-title { color: var(--red); }
-  .label-hint { font-size: 0.78rem; color: var(--muted); font-weight: 300; text-transform: none; letter-spacing: 0; display: block; margin-top: 2px; margin-bottom: 6px; }
   @media (max-width: 640px) {
-    .info-grid, .row-2, .row-3 { grid-template-columns: 1fr; }
+    .info-grid, .row-2 { grid-template-columns: 1fr; }
     .form-footer { flex-direction: column; align-items: stretch; }
     .btn-submit { text-align: center; }
     .form-card { padding: 1.5rem; }
@@ -137,203 +263,123 @@
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo">Mine<span>Back</span></div>
-  <div class="nav-breadcrumb"><a href="#">Inicio</a> / Postulaciones Staff</div>
-</nav>
-
-<main>
-  <div class="hero">
-    <div class="hero-badge">⚡ Reclutamiento Activo</div>
-    <h1>Postulaciones para<br><span>Staff MineBack</span></h1>
-    <p class="hero-sub">¿Tienes lo que se necesita? Completa el formulario con honestidad y detalle. Cada respuesta cuenta.</p>
+<!-- ── PANTALLA DE LOGIN ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">⚔️</div>
+    <h2>Mine<span>Back</span></h2>
+    <p>Inicia sesión con tu cuenta de Discord para poder enviar tu postulación al Staff.</p>
+    <a href="/login" class="btn-discord">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+      </svg>
+      Iniciar sesión con Discord
+    </a>
   </div>
+</div>
 
-  <div class="info-grid">
-    <div class="info-card">
-      <h3>📋 Requisitos</h3>
-      <ul>
-        <li>Mínimo 14 años de edad</li>
-        <li>Cuenta premium</li>
-        <li>Historial limpio en el servidor</li>
-        <li>No ser staff en otro servidor</li>
-        <li>Buena ortografía y madurez</li>
-      </ul>
+<!-- ── CONTENIDO PRINCIPAL ── -->
+<div id="main-content">
+  <nav>
+    <div class="nav-logo">Mine<span>Back</span></div>
+    <div class="nav-right">
+      <div class="nav-breadcrumb"><a href="#">Inicio</a> / Postulaciones Staff</div>
+      <div class="nav-user" id="nav-user"></div>
     </div>
-    <div class="info-card">
-      <h3>⚠️ Importante</h3>
-      <ul>
-        <li>Responde con seriedad y honestidad</li>
-        <li>Información falsa = descalificación</li>
-        <li>Revisión en varios días</li>
-        <li>Resultado enviado por Discord</li>
-        <li>Una sola postulación por usuario</li>
-      </ul>
-    </div>
-  </div>
+  </nav>
 
-  <div class="divider"><span>Formulario de Postulación</span></div>
-
-  <div class="form-card">
-    <div class="form-header">
-      <h2>Completa todos los campos</h2>
-      <p>Cada respuesta es leída cuidadosamente por el equipo. Sé claro y detallado.</p>
+  <main>
+    <div class="hero">
+      <div class="hero-badge">⚡ Reclutamiento Activo</div>
+      <h1>Postulaciones para<br><span>Staff MineBack</span></h1>
+      <p class="hero-sub">¿Tienes lo que se necesita? Completa el formulario con honestidad y detalle. Cada respuesta cuenta.</p>
     </div>
 
-    <form id="postulacion-form">
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>📋 Requisitos</h3>
+        <ul>
+          <li>Mínimo 14 años de edad</li>
+          <li>Cuenta premium</li>
+          <li>Historial limpio en el servidor</li>
+          <li>No ser staff en otro servidor</li>
+          <li>Buena ortografía y madurez</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h3>⚠️ Importante</h3>
+        <ul>
+          <li>Responde con seriedad y honestidad</li>
+          <li>Información falsa = descalificación</li>
+          <li>Revisión en varios días</li>
+          <li>Resultado enviado por Discord</li>
+          <li>Una sola postulación por usuario</li>
+        </ul>
+      </div>
+    </div>
 
-      <!-- 1 y 2 -->
-      <div class="row-2">
-        <div class="field-group">
-          <label><span class="num">1</span> Nombre y Edad</label>
-          <span class="label-hint">Tu nombre completo y tu edad.</span>
-          <input type="text" name="nombre_edad" placeholder="Ej: Juan Pérez, 17 años" required>
+    <div class="divider"><span>Formulario de Postulación</span></div>
+
+    <div class="form-card">
+      <div class="form-header">
+        <h2>Completa todos los campos</h2>
+        <p>Cada respuesta es leída cuidadosamente por el equipo. Sé claro y detallado.</p>
+      </div>
+
+      <form id="postulacion-form">
+        <div class="row-2">
+          <div class="field-group">
+            <label><span class="num">1</span> Tu usuario de Discord</label>
+            <input type="text" name="discord" id="campo-discord" placeholder="tuusuario" required maxlength="50">
+          </div>
+          <div class="field-group">
+            <label><span class="num">2</span> Edad y fecha de nacimiento</label>
+            <input type="text" name="edad" placeholder="Ej: 16 años – 03/05/2008" required>
+          </div>
         </div>
         <div class="field-group">
-          <label><span class="num">2</span> Usuario e ID de Discord</label>
-          <span class="label-hint">Tu nombre de usuario o ID de Discord.</span>
-          <input type="text" name="discord" placeholder="Ej: juanperez o 123456789" required>
-        </div>
-      </div>
-
-      <!-- 3, 4, 5 -->
-      <div class="row-3">
-        <div class="field-group">
-          <label><span class="num">3</span> ¿Eres Premium?</label>
-          <select name="premium" required>
-            <option value="" disabled selected>Selecciona...</option>
-            <option value="Sí">✅ Sí</option>
-            <option value="No">❌ No</option>
-          </select>
+          <label><span class="num">3</span> ¿Por qué quieres ser staff en MineBack?</label>
+          <textarea name="razon" placeholder="Explica tus motivaciones con detalle..." required></textarea>
         </div>
         <div class="field-group">
-          <label><span class="num">4</span> Java o Bedrock</label>
-          <select name="plataforma" required>
-            <option value="" disabled selected>Selecciona...</option>
-            <option value="Java">☕ Java</option>
-            <option value="Bedrock">📱 Bedrock</option>
-            <option value="Ambos">🎮 Ambos</option>
-          </select>
+          <label><span class="num">4</span> ¿Qué experiencia tienes como staff?</label>
+          <textarea name="experiencia" placeholder="Menciona servidores, cargos y tiempo (o 'Sin experiencia previa')..." required></textarea>
+        </div>
+        <div class="row-2">
+          <div class="field-group">
+            <label><span class="num">5</span> Horas disponibles por día</label>
+            <input type="text" name="horas" placeholder="Ej: 3-4 horas en semana..." required>
+          </div>
+          <div class="field-group">
+            <label><span class="num">6</span> ¿Conoces comandos de moderación?</label>
+            <select name="comandos" required>
+              <option value="" disabled selected>Selecciona...</option>
+              <option value="Sí, tengo experiencia sólida">✅ Sí, tengo experiencia sólida</option>
+              <option value="Conozco lo básico">⚡ Conozco lo básico</option>
+              <option value="No, pero puedo aprender">📖 No, pero puedo aprender</option>
+            </select>
+          </div>
         </div>
         <div class="field-group">
-          <label><span class="num">5</span> ¿De qué país eres?</label>
-          <input type="text" name="pais" placeholder="Ej: México" required>
-        </div>
-      </div>
-
-      <!-- 6 -->
-      <div class="field-group">
-        <label><span class="num">6</span> Tiempo disponible para MineBack</label>
-        <input type="text" name="horas" placeholder="Ej: 4 horas diarias entre semana, 6 horas los fines de semana" required>
-      </div>
-
-      <!-- 7 -->
-      <div class="field-group">
-        <label><span class="num">7</span> Experiencia como Staff</label>
-        <span class="label-hint">Si la tienes, indica rango, servidor y motivo por el que ya no formas parte.</span>
-        <textarea name="experiencia" placeholder="Ej: Helper en ServerXYZ durante 6 meses, salí porque el servidor cerró. / Sin experiencia previa." required></textarea>
-      </div>
-
-      <!-- 8 -->
-      <div class="field-group">
-        <label><span class="num">8</span> ¿Por qué quieres ser Staff en MineBack?</label>
-        <textarea name="razon" placeholder="Explica tus motivaciones con detalle..." required></textarea>
-      </div>
-
-      <!-- 9 y 11 -->
-      <div class="row-2">
-        <div class="field-group">
-          <label><span class="num">9</span> ¿Hace cuánto juegas MineBack?</label>
-          <input type="text" name="tiempo_mineback" placeholder="Ej: 1 año y 3 meses" required>
+          <label><span class="num">7</span> ¿Cómo manejarías un conflicto entre jugadores?</label>
+          <textarea name="conflicto" placeholder="Describe el proceso paso a paso..." required></textarea>
         </div>
         <div class="field-group">
-          <label><span class="num">11</span> ¿Hace cuánto juegas Minecraft?</label>
-          <input type="text" name="tiempo_minecraft" placeholder="Ej: 4 años" required>
-        </div>
-      </div>
-
-      <!-- 10 -->
-      <div class="field-group">
-        <label><span class="num">10</span> Menciona al menos 3 comandos básicos de Staff</label>
-        <span class="label-hint">No cuentan: /ban /tp /kick /mute /warn</span>
-        <textarea name="comandos" placeholder="Ej: /tempban, /clearchat, /history..." required></textarea>
-      </div>
-
-      <!-- 12 -->
-      <div class="field-group">
-        <label><span class="num">12</span> Califica tu Ortografía y Madurez (1 al 10)</label>
-        <input type="text" name="calificacion" placeholder="Ej: Ortografía: 8 — Madurez: 9" required>
-      </div>
-
-      <!-- 13 y 14 -->
-      <div class="field-group">
-        <label><span class="num">13</span> ¿Cuáles serían tus aspiraciones en el Staff Team?</label>
-        <textarea name="aspiraciones" placeholder="Describe tus metas dentro del equipo..." required></textarea>
-      </div>
-      <div class="field-group">
-        <label><span class="num">14</span> ¿Por qué deberíamos elegirte a ti?</label>
-        <textarea name="por_que_tu" placeholder="Explica qué te diferencia de otros postulantes..." required></textarea>
-      </div>
-
-      <!-- 15 y 17 -->
-      <div class="row-2">
-        <div class="field-group">
-          <label><span class="num">15</span> ¿Sabes qué es Spam?</label>
-          <textarea name="spam" placeholder="Explica el término..." required></textarea>
+          <label><span class="num">8</span> ¿Qué harías si descubres a un jugador usando hacks?</label>
+          <textarea name="hacks" placeholder="Explica tu protocolo de acción..." required></textarea>
         </div>
         <div class="field-group">
-          <label><span class="num">17</span> ¿Sabes qué es Flood?</label>
-          <textarea name="flood" placeholder="Explica el término..." required></textarea>
+          <label><span class="num">+</span> ¿Algo más que quieras agregar? (opcional)</label>
+          <textarea name="extra" placeholder="Cualquier información adicional relevante..." rows="3"></textarea>
         </div>
-      </div>
-
-      <!-- 16 -->
-      <div class="field-group">
-        <label><span class="num">16</span> ¿Qué harías si encuentras un Hacker sin rango para sancionarlo?</label>
-        <textarea name="hacker" placeholder="Describe tu protocolo de acción..." required></textarea>
-      </div>
-
-      <!-- 18 -->
-      <div class="field-group">
-        <label><span class="num">18</span> Un Staff abusa de sus permisos. ¿Qué harías?</label>
-        <textarea name="abuso_staff" placeholder="Explica cómo actuarías en esa situación..." required></textarea>
-      </div>
-
-      <!-- 19 -->
-      <div class="field-group">
-        <label><span class="num">19</span> Un usuario abre un ticket para reportar un bug. ¿Qué harías?</label>
-        <textarea name="bug_ticket" placeholder="Describe el proceso paso a paso..." required></textarea>
-      </div>
-
-      <!-- 20 y 21 -->
-      <div class="field-group">
-        <label><span class="num">20</span> ¿Qué es una ScreenShare?</label>
-        <textarea name="screenshare" placeholder="Explica el término..." required></textarea>
-      </div>
-      <div class="field-group">
-        <label><span class="num">21</span> Programas que usarías en una SS y cómo los usarías</label>
-        <textarea name="programas_ss" placeholder="Menciona los programas y explica su uso..." required></textarea>
-      </div>
-
-      <!-- 22 y 23 -->
-      <div class="row-2">
-        <div class="field-group">
-          <label><span class="num">22</span> Menciona al menos 3 Ghost Clients</label>
-          <textarea name="ghost_clients" placeholder="Ej: Wurst, Sigma, Meteor..." required></textarea>
+        <div class="form-footer">
+          <p class="form-note">Al enviar confirmas que toda la información es verídica.</p>
+          <button type="submit" class="btn-submit" id="submit-btn">Enviar Postulación →</button>
         </div>
-        <div class="field-group">
-          <label><span class="num">23</span> Diferencia entre Macro y AutoClick</label>
-          <textarea name="macro_autoclick" placeholder="Explica la diferencia..." required></textarea>
-        </div>
-      </div>
-
-      <div class="form-footer">
-        <p class="form-note">Al enviar confirmas que toda la información es verídica.</p>
-        <button type="submit" class="btn-submit" id="submit-btn">Enviar Postulación →</button>
-      </div>
-    </form>
-  </div>
-</main>
+      </form>
+    </div>
+  </main>
+</div>
 
 <div class="toast" id="toast">
   <div class="toast-icon" id="toast-icon">✅</div>
@@ -344,8 +390,51 @@
 </div>
 
 <script>
-  const form = document.getElementById("postulacion-form");
-  const btn  = document.getElementById("submit-btn");
+  // ── VERIFICAR LOGIN AL CARGAR ──
+  async function verificarLogin() {
+    try {
+      const res = await fetch('/me');
+      const user = await res.json();
+
+      if (user.logged) {
+        // Ocultar pantalla de login, mostrar contenido
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+
+        // Rellenar campo de discord automáticamente
+        const campoDc = document.getElementById('campo-discord');
+        if (campoDc) campoDc.value = user.username;
+
+        // Mostrar usuario en nav
+        const navUser = document.getElementById('nav-user');
+        const avatarHtml = user.avatar_url
+          ? `<img src="${user.avatar_url}" class="nav-avatar" alt="avatar">`
+          : `<div class="nav-avatar-placeholder">${user.username.charAt(0).toUpperCase()}</div>`;
+        navUser.innerHTML = `
+          ${avatarHtml}
+          <span>${user.global_name || user.username}</span>
+          <button class="btn-logout" onclick="logout()">Salir</button>
+        `;
+      } else {
+        // Mostrar pantalla de login
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('main-content').style.display = 'none';
+      }
+    } catch (e) {
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'none';
+    }
+  }
+
+  function logout() {
+    window.location.href = '/logout';
+  }
+
+  verificarLogin();
+
+  // ── FORMULARIO ──
+  const form  = document.getElementById("postulacion-form");
+  const btn   = document.getElementById("submit-btn");
   const toast = document.getElementById("toast");
 
   function showToast(type, title, msg) {
