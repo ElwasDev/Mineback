@@ -20,6 +20,8 @@ app_web.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
 DISCORD_CLIENT_ID     = os.environ.get("DISCORD_CLIENT_ID", "")
 DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET", "")
 WEB_URL               = os.environ.get("WEB_URL", "http://localhost:5000").rstrip("/")
+print(f"DEBUG CLIENT_ID={DISCORD_CLIENT_ID!r}")
+print(f"DEBUG CLIENT_SECRET={DISCORD_CLIENT_SECRET[:4] if DISCORD_CLIENT_SECRET else 'VACIO'}...")
 
 DISCORD_AUTH_URL = "https://discord.com/api/oauth2/authorize"
 DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
