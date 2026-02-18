@@ -89,7 +89,7 @@
   .form-header p { color: var(--muted); font-size: 0.9rem; font-weight: 300; }
   .field-group { margin-bottom: 1.6rem; }
   label { display: block; font-size: 0.82rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #ccc; margin-bottom: 0.5rem; }
-  label .num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--red); color: #fff; font-size: 0.65rem; border-radius: 3px; margin-right: 0.5rem; font-family: 'Orbitron', monospace; }
+  label .num { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; background: var(--red); color: #fff; font-size: 0.65rem; border-radius: 3px; margin-right: 0.5rem; font-family: 'Orbitron', monospace; padding: 0 4px; }
   input[type="text"], textarea, select {
     width: 100%; background: var(--bg3); border: 1px solid rgba(230,57,70,0.25);
     border-radius: 5px; padding: 0.8rem 1rem; color: var(--text);
@@ -99,6 +99,7 @@
   input:focus, textarea:focus, select:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-glow); }
   textarea { min-height: 90px; }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
   .form-footer { margin-top: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .form-note { font-size: 0.82rem; color: var(--muted); font-weight: 300; }
   .btn-submit {
@@ -125,8 +126,9 @@
   .toast.success .toast-title { color: #34c759; }
   .toast.error { border-color: rgba(230,57,70,0.5); }
   .toast.error .toast-title { color: var(--red); }
+  .label-hint { font-size: 0.78rem; color: var(--muted); font-weight: 300; text-transform: none; letter-spacing: 0; display: block; margin-top: 2px; margin-bottom: 6px; }
   @media (max-width: 640px) {
-    .info-grid, .row-2 { grid-template-columns: 1fr; }
+    .info-grid, .row-2, .row-3 { grid-template-columns: 1fr; }
     .form-footer { flex-direction: column; align-items: stretch; }
     .btn-submit { text-align: center; }
     .form-card { padding: 1.5rem; }
@@ -179,51 +181,152 @@
     </div>
 
     <form id="postulacion-form">
+
+      <!-- 1 y 2 -->
       <div class="row-2">
         <div class="field-group">
-          <label><span class="num">1</span> Tu usuario de Discord</label>
-          <input type="text" name="discord" placeholder="tuusuario" required maxlength="50">
+          <label><span class="num">1</span> Nombre y Edad</label>
+          <span class="label-hint">Tu nombre completo y tu edad.</span>
+          <input type="text" name="nombre_edad" placeholder="Ej: Juan Pérez, 17 años" required>
         </div>
         <div class="field-group">
-          <label><span class="num">2</span> Edad y fecha de nacimiento</label>
-          <input type="text" name="edad" placeholder="Ej: 16 años — 03/05/2008" required>
+          <label><span class="num">2</span> Usuario e ID de Discord</label>
+          <span class="label-hint">Tu nombre de usuario o ID de Discord.</span>
+          <input type="text" name="discord" placeholder="Ej: juanperez o 123456789" required>
         </div>
       </div>
-      <div class="field-group">
-        <label><span class="num">3</span> ¿Por qué quieres ser staff en MineBack?</label>
-        <textarea name="razon" placeholder="Explica tus motivaciones con detalle..." required></textarea>
-      </div>
-      <div class="field-group">
-        <label><span class="num">4</span> ¿Qué experiencia tienes como staff?</label>
-        <textarea name="experiencia" placeholder="Menciona servidores, cargos y tiempo (o 'Sin experiencia previa')..." required></textarea>
-      </div>
-      <div class="row-2">
+
+      <!-- 3, 4, 5 -->
+      <div class="row-3">
         <div class="field-group">
-          <label><span class="num">5</span> Horas disponibles por día</label>
-          <input type="text" name="horas" placeholder="Ej: 3-4 horas en semana..." required>
-        </div>
-        <div class="field-group">
-          <label><span class="num">6</span> ¿Conoces comandos de moderación?</label>
-          <select name="comandos" required>
+          <label><span class="num">3</span> ¿Eres Premium?</label>
+          <select name="premium" required>
             <option value="" disabled selected>Selecciona...</option>
-            <option value="Sí, tengo experiencia sólida">✅ Sí, tengo experiencia sólida</option>
-            <option value="Conozco lo básico">⚡ Conozco lo básico</option>
-            <option value="No, pero puedo aprender">📖 No, pero puedo aprender</option>
+            <option value="Sí">✅ Sí</option>
+            <option value="No">❌ No</option>
           </select>
         </div>
+        <div class="field-group">
+          <label><span class="num">4</span> Java o Bedrock</label>
+          <select name="plataforma" required>
+            <option value="" disabled selected>Selecciona...</option>
+            <option value="Java">☕ Java</option>
+            <option value="Bedrock">📱 Bedrock</option>
+            <option value="Ambos">🎮 Ambos</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label><span class="num">5</span> ¿De qué país eres?</label>
+          <input type="text" name="pais" placeholder="Ej: México" required>
+        </div>
+      </div>
+
+      <!-- 6 -->
+      <div class="field-group">
+        <label><span class="num">6</span> Tiempo disponible para MineBack</label>
+        <input type="text" name="horas" placeholder="Ej: 4 horas diarias entre semana, 6 horas los fines de semana" required>
+      </div>
+
+      <!-- 7 -->
+      <div class="field-group">
+        <label><span class="num">7</span> Experiencia como Staff</label>
+        <span class="label-hint">Si la tienes, indica rango, servidor y motivo por el que ya no formas parte.</span>
+        <textarea name="experiencia" placeholder="Ej: Helper en ServerXYZ durante 6 meses, salí porque el servidor cerró. / Sin experiencia previa." required></textarea>
+      </div>
+
+      <!-- 8 -->
+      <div class="field-group">
+        <label><span class="num">8</span> ¿Por qué quieres ser Staff en MineBack?</label>
+        <textarea name="razon" placeholder="Explica tus motivaciones con detalle..." required></textarea>
+      </div>
+
+      <!-- 9 y 11 -->
+      <div class="row-2">
+        <div class="field-group">
+          <label><span class="num">9</span> ¿Hace cuánto juegas MineBack?</label>
+          <input type="text" name="tiempo_mineback" placeholder="Ej: 1 año y 3 meses" required>
+        </div>
+        <div class="field-group">
+          <label><span class="num">11</span> ¿Hace cuánto juegas Minecraft?</label>
+          <input type="text" name="tiempo_minecraft" placeholder="Ej: 4 años" required>
+        </div>
+      </div>
+
+      <!-- 10 -->
+      <div class="field-group">
+        <label><span class="num">10</span> Menciona al menos 3 comandos básicos de Staff</label>
+        <span class="label-hint">No cuentan: /ban /tp /kick /mute /warn</span>
+        <textarea name="comandos" placeholder="Ej: /tempban, /clearchat, /history..." required></textarea>
+      </div>
+
+      <!-- 12 -->
+      <div class="field-group">
+        <label><span class="num">12</span> Califica tu Ortografía y Madurez (1 al 10)</label>
+        <input type="text" name="calificacion" placeholder="Ej: Ortografía: 8 — Madurez: 9" required>
+      </div>
+
+      <!-- 13 y 14 -->
+      <div class="field-group">
+        <label><span class="num">13</span> ¿Cuáles serían tus aspiraciones en el Staff Team?</label>
+        <textarea name="aspiraciones" placeholder="Describe tus metas dentro del equipo..." required></textarea>
       </div>
       <div class="field-group">
-        <label><span class="num">7</span> ¿Cómo manejarías un conflicto entre jugadores?</label>
-        <textarea name="conflicto" placeholder="Describe el proceso paso a paso..." required></textarea>
+        <label><span class="num">14</span> ¿Por qué deberíamos elegirte a ti?</label>
+        <textarea name="por_que_tu" placeholder="Explica qué te diferencia de otros postulantes..." required></textarea>
+      </div>
+
+      <!-- 15 y 17 -->
+      <div class="row-2">
+        <div class="field-group">
+          <label><span class="num">15</span> ¿Sabes qué es Spam?</label>
+          <textarea name="spam" placeholder="Explica el término..." required></textarea>
+        </div>
+        <div class="field-group">
+          <label><span class="num">17</span> ¿Sabes qué es Flood?</label>
+          <textarea name="flood" placeholder="Explica el término..." required></textarea>
+        </div>
+      </div>
+
+      <!-- 16 -->
+      <div class="field-group">
+        <label><span class="num">16</span> ¿Qué harías si encuentras un Hacker sin rango para sancionarlo?</label>
+        <textarea name="hacker" placeholder="Describe tu protocolo de acción..." required></textarea>
+      </div>
+
+      <!-- 18 -->
+      <div class="field-group">
+        <label><span class="num">18</span> Un Staff abusa de sus permisos. ¿Qué harías?</label>
+        <textarea name="abuso_staff" placeholder="Explica cómo actuarías en esa situación..." required></textarea>
+      </div>
+
+      <!-- 19 -->
+      <div class="field-group">
+        <label><span class="num">19</span> Un usuario abre un ticket para reportar un bug. ¿Qué harías?</label>
+        <textarea name="bug_ticket" placeholder="Describe el proceso paso a paso..." required></textarea>
+      </div>
+
+      <!-- 20 y 21 -->
+      <div class="field-group">
+        <label><span class="num">20</span> ¿Qué es una ScreenShare?</label>
+        <textarea name="screenshare" placeholder="Explica el término..." required></textarea>
       </div>
       <div class="field-group">
-        <label><span class="num">8</span> ¿Qué harías si descubres a un jugador usando hacks?</label>
-        <textarea name="hacks" placeholder="Explica tu protocolo de acción..." required></textarea>
+        <label><span class="num">21</span> Programas que usarías en una SS y cómo los usarías</label>
+        <textarea name="programas_ss" placeholder="Menciona los programas y explica su uso..." required></textarea>
       </div>
-      <div class="field-group">
-        <label><span class="num">+</span> ¿Algo más que quieras agregar? (opcional)</label>
-        <textarea name="extra" placeholder="Cualquier información adicional relevante..." rows="3"></textarea>
+
+      <!-- 22 y 23 -->
+      <div class="row-2">
+        <div class="field-group">
+          <label><span class="num">22</span> Menciona al menos 3 Ghost Clients</label>
+          <textarea name="ghost_clients" placeholder="Ej: Wurst, Sigma, Meteor..." required></textarea>
+        </div>
+        <div class="field-group">
+          <label><span class="num">23</span> Diferencia entre Macro y AutoClick</label>
+          <textarea name="macro_autoclick" placeholder="Explica la diferencia..." required></textarea>
+        </div>
       </div>
+
       <div class="form-footer">
         <p class="form-note">Al enviar confirmas que toda la información es verídica.</p>
         <button type="submit" class="btn-submit" id="submit-btn">Enviar Postulación →</button>
@@ -262,7 +365,6 @@
     btn.textContent = "Enviando...";
 
     try {
-      // Envía al servidor Flask (el propio bot)
       const res = await fetch("/enviar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
