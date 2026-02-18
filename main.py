@@ -4,22 +4,121 @@ from discord import app_commands
 import asyncio
 import json
 import os
+import secrets
+import urllib.parse
+import urllib.request
 from datetime import datetime, timedelta
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, send_from_directory, jsonify, request, redirect, session
 import threading
 
 # ─────────────────────────────────────────
 #  SERVIDOR WEB (Flask)
 # ─────────────────────────────────────────
 app_web = Flask(__name__, static_folder='web')
+app_web.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
+
+DISCORD_CLIENT_ID     = os.environ.get("DISCORD_CLIENT_ID", "")
+DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET", "")
+WEB_URL               = os.environ.get("WEB_URL", "http://localhost:5000").rstrip("/")
+
+DISCORD_AUTH_URL = "https://discord.com/api/oauth2/authorize"
+DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
+DISCORD_USER_URL  = "https://discord.com/api/users/@me"
+
+def get_redirect_uri():
+    return f"{WEB_URL}/callback"
+
+# ──────────────────────────────────────────
+#  RUTAS WEB
+# ──────────────────────────────────────────
 
 @app_web.route('/')
 def index():
-    return send_from_directory('web', 'index.html')
+    if session.get("discord_user"):
+        return send_from_directory('web', 'index.html')
+    return send_from_directory('web', 'login.html')
+
+@app_web.route('/login')
+def login():
+    state = secrets.token_urlsafe(16)
+    session["oauth_state"] = state
+    params = urllib.parse.urlencode({
+        "client_id":     DISCORD_CLIENT_ID,
+        "redirect_uri":  get_redirect_uri(),
+        "response_type": "code",
+        "scope":         "identify",
+        "state":         state,
+    })
+    return redirect(f"{DISCORD_AUTH_URL}?{params}")
+
+@app_web.route('/callback')
+def callback():
+    code  = request.args.get("code")
+    state = request.args.get("state")
+
+    if not code or state != session.get("oauth_state"):
+        return redirect("/?error=state_mismatch")
+
+    try:
+        data = urllib.parse.urlencode({
+            "client_id":     DISCORD_CLIENT_ID,
+            "client_secret": DISCORD_CLIENT_SECRET,
+            "grant_type":    "authorization_code",
+            "code":          code,
+            "redirect_uri":  get_redirect_uri(),
+        }).encode()
+
+        req = urllib.request.Request(
+            DISCORD_TOKEN_URL,
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as resp:
+            token_data = json.loads(resp.read())
+
+        access_token = token_data.get("access_token")
+        if not access_token:
+            return redirect("/?error=no_token")
+
+        req2 = urllib.request.Request(
+            DISCORD_USER_URL,
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        with urllib.request.urlopen(req2) as resp2:
+            user_data = json.loads(resp2.read())
+
+        session["discord_user"] = {
+            "id":          user_data.get("id"),
+            "username":    user_data.get("username"),
+            "global_name": user_data.get("global_name") or user_data.get("username"),
+            "avatar":      user_data.get("avatar"),
+        }
+        session.pop("oauth_state", None)
+        return redirect("/")
+
+    except Exception as e:
+        print(f"OAuth error: {e}")
+        return redirect("/?error=oauth_failed")
+
+@app_web.route('/logout')
+def logout():
+    session.clear()
+    return redirect("/")
+
+@app_web.route('/me')
+def me():
+    user = session.get("discord_user")
+    if user:
+        return jsonify({"ok": True, "user": user})
+    return jsonify({"ok": False}), 401
 
 @app_web.route('/enviar', methods=['POST'])
 def recibir_postulacion():
-    # Intentar parsear JSON de múltiples formas para mayor compatibilidad
+    user = session.get("discord_user")
+    if not user:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+
     data = None
     try:
         data = request.get_json(force=True, silent=True)
@@ -27,12 +126,15 @@ def recibir_postulacion():
         pass
     if not data:
         try:
-            import json as _json
-            data = _json.loads(request.data.decode('utf-8'))
+            data = json.loads(request.data.decode('utf-8'))
         except Exception:
             pass
     if not data:
         return jsonify({"ok": False, "error": "Sin datos"}), 400
+
+    data["discord"]      = user.get("username")
+    data["discord_id"]   = user.get("id")
+    data["discord_name"] = user.get("global_name")
     postulaciones_web_pendientes.append(data)
     return jsonify({"ok": True})
 
@@ -51,7 +153,6 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ── Configuración desde variables de entorno ──
 TOKEN = os.environ.get("TOKEN", "")
 config = {
     "token": TOKEN,
@@ -72,7 +173,6 @@ except:
 postulaciones_activas = {}
 
 def guardar_config():
-    # Ya no se guarda en archivo, los cambios de IDs solo viven en memoria
     pass
 
 # ─────────────────────────────────────────
@@ -106,10 +206,15 @@ async def enviar_al_canal_revision_web(data):
         except:
             return
 
+    discord_tag  = data.get('discord', 'No especificado')
+    discord_name = data.get('discord_name', discord_tag)
+    discord_id   = data.get('discord_id', '')
+
     embed = discord.Embed(
         title="🌐 Nueva postulación WEB — Staff MineBack",
         description=(
-            f"📌 **Discord:** `{data.get('discord', 'No especificado')}`\n"
+            f"📌 **Discord:** `{discord_tag}` ({discord_name})\n"
+            f"🆔 **ID:** `{discord_id}`\n"
             f"🎂 **Edad:** `{data.get('edad', 'No especificado')}`"
         ),
         color=discord.Color.red(),
@@ -117,21 +222,21 @@ async def enviar_al_canal_revision_web(data):
     )
 
     campos = {
-        "razon":      "❓ ¿Por qué quiere ser staff?",
-        "experiencia":"📂 Experiencia previa",
-        "horas":      "⏰ Disponibilidad diaria",
-        "comandos":   "⌨️ Comandos de moderación",
-        "conflicto":  "⚔️ Manejo de conflictos",
-        "hacks":      "🚫 Protocolo anti-hacks",
-        "extra":      "💬 Información adicional",
+        "razon":       "❓ ¿Por qué quiere ser staff?",
+        "experiencia": "📂 Experiencia previa",
+        "horas":       "⏰ Disponibilidad diaria",
+        "comandos":    "⌨️ Comandos de moderación",
+        "conflicto":   "⚔️ Manejo de conflictos",
+        "hacks":       "🚫 Protocolo anti-hacks",
+        "extra":       "💬 Información adicional",
     }
     for campo, titulo in campos.items():
         valor = data.get(campo, "").strip()
         if valor:
             embed.add_field(name=titulo, value=valor[:1024], inline=False)
 
-    embed.set_footer(text="Enviado desde la página web")
-    view = BotonesRevision(0, data.get('discord', 'Usuario web'))
+    embed.set_footer(text="Enviado desde la página web · Verificado con Discord OAuth2")
+    view = BotonesRevision(int(discord_id) if discord_id else 0, discord_tag)
     await canal_revision.send(embed=embed, view=view)
 
 # ─────────────────────────────────────────
@@ -246,7 +351,7 @@ async def finalizar_postulacion(canal, user_id):
 class BotonesRevision(discord.ui.View):
     def __init__(self, user_id, username):
         super().__init__(timeout=None)
-        self.user_id = user_id
+        self.user_id  = user_id
         self.username = username
 
     async def _get_canal_resultados(self, guild):
@@ -257,9 +362,9 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Aceptar", style=discord.ButtonStyle.success, custom_id="aceptar_postulacion", emoji="<:si_mineback:1455742911739199724>")
     async def aceptar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild = interaction.guild
+        guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
-        usuario = guild.get_member(self.user_id)
+        usuario   = guild.get_member(self.user_id)
 
         if canal_res:
             e = discord.Embed(title="[INGRESO] Postulante admitido en el Staff",
@@ -286,9 +391,9 @@ class BotonesRevision(discord.ui.View):
 
     @discord.ui.button(label="Rechazar", style=discord.ButtonStyle.danger, custom_id="rechazar_postulacion", emoji="<:No_mineback:1455742851601268868>")
     async def rechazar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild = interaction.guild
+        guild     = interaction.guild
         canal_res = await self._get_canal_resultados(guild)
-        usuario = guild.get_member(self.user_id)
+        usuario   = guild.get_member(self.user_id)
 
         if canal_res:
             e = discord.Embed(title="[RESULTADO] Postulación rechazada",
@@ -386,7 +491,7 @@ class ConfirmarPostulacion(discord.ui.View):
 @bot.event
 async def on_ready():
     print(f'✅ Bot conectado como {bot.user}')
-    print(f'🌐 Página web activa')
+    print(f'🌐 Página web activa con OAuth2 Discord')
     try:
         synced = await bot.tree.sync()
         print(f'✅ {len(synced)} comandos sincronizados')
@@ -423,35 +528,27 @@ async def setup_postulaciones(interaction: discord.Interaction):
         description=(
             "# <:mineback:1454904946452598794> - ¡POSTULACIONES ABIERTAS!\n"
             "¿Estás interesado en ser parte del Staff-Team?\n"
-            "Si es así, no esperes más. Esta es tu oportunidad para intentar ser parte del Staff-Team. Postúlate ahora dando clic en el botón Azul. <:sword_mineback:1426448879272071262>\n\n"
-            "**¿Cómo me postulo?**\n"
-            "Al dar clic en el botón se creará un canal privado donde deberás responder todas las preguntas del formulario.\n"
-            "Una vez completadas todas las preguntas deberás dar clic en \"Enviar postulación\" y listo, tu postulación se enviará.\n\n"
+            "Si es así, no esperes más. Esta es tu oportunidad. Postúlate dando clic en el botón de abajo.\n\n"
             "# Requisitos a cumplir:\n"
-            "<:Survival_MineBack:1473477865713570056>: Tener mínimo 14 Años. (Pueden haber excepciones)\n"
+            "<:Survival_MineBack:1473477865713570056>: Tener mínimo 14 Años.\n"
             "<:Survival_MineBack:1473477865713570056>: Ser premium.\n"
-            "<:Survival_MineBack:1473477865713570056>: Contar con un historial limpio en el servidor. (No tener sanciones graves recientemente)\n"
+            "<:Survival_MineBack:1473477865713570056>: Historial limpio en el servidor.\n"
             "<:Survival_MineBack:1473477865713570056>: No ser staff en otro servidor.\n"
-            "<:Survival_MineBack:1473477865713570056>: Tener una buena ortografía.\n"
-            "<:Survival_MineBack:1473477865713570056>: Ser maduro.\n\n"
-            "¿Cumples los requisitos?\n"
-            "<:cohete_mineback:1455743005787951294> - **¡Postúlate dando clic en el botón de abajo!**\n"
-            "¡Te deseamos suerte en tu postulación!\n\n"
-            "<:mineback:1454904946452598794> | mineback.xyz (( 1.16x - 1.21x ))\n"
-            "<:Con_conex:1473479504365228084> | Puerto: 19132\n"
-            "<:asassa:1470495966967890002> | Tienda: https://tienda.mineback.xyz/ (( -75% OFF ))"
+            "<:Survival_MineBack:1473477865713570056>: Buena ortografía y madurez.\n\n"
+            "<:cohete_mineback:1455743005787951294> - **¡Postúlate dando clic en el botón de abajo!**\n\n"
+            "<:mineback:1454904946452598794> | mineback.xyz (( 1.16x - 1.21x ))"
         ),
         color=discord.Color.red()
     )
-    
+
     view = discord.ui.View(timeout=None)
     view.add_item(discord.ui.Button(
         label="Postularse",
         style=discord.ButtonStyle.link,
-        url="https://minebackpostulaciones.up.railway.app/",
+        url=WEB_URL or "https://minebackpostulaciones.up.railway.app/",
         emoji="🌐"
     ))
-    
+
     await interaction.response.send_message("✅ Configurado!", ephemeral=True)
     await interaction.channel.send(embed=embed, view=view)
 
@@ -459,9 +556,8 @@ async def setup_postulaciones(interaction: discord.Interaction):
 @bot.tree.command(name="ayuda_postulaciones", description="Ayuda sobre el sistema")
 async def ayuda_postulaciones(interaction: discord.Interaction):
     embed = discord.Embed(title="ℹ️ Ayuda - Postulaciones", color=discord.Color.red())
-    embed.add_field(name="🌐 Web", value="Clic en **Postularse (Web)** → abre la página del formulario.", inline=False)
-    embed.add_field(name="💬 Chat", value="Clic en **Postularse (Chat)** → responde en tu canal privado.", inline=False)
-    embed.add_field(name="⏰ Tiempo", value="34 minutos para completar por chat.", inline=False)
+    embed.add_field(name="🌐 Web", value="Haz clic en el botón → inicia sesión con Discord → completa el formulario.", inline=False)
+    embed.add_field(name="🔐 Seguridad", value="El sistema verifica tu identidad con Discord OAuth2.", inline=False)
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
@@ -472,7 +568,6 @@ if __name__ == "__main__":
     TOKEN = os.environ.get("TOKEN") or os.environ.get("token") or ""
     TOKEN = TOKEN.strip()
     print(f"DEBUG: TOKEN existe={bool(TOKEN)}, largo={len(TOKEN)}")
-    print(f"DEBUG ENV keys: {list(os.environ.keys())}")
     if not TOKEN:
         print("❌ ERROR: Variable de entorno TOKEN no configurada.")
     else:
