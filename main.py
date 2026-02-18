@@ -40,9 +40,11 @@ def get_redirect_uri():
 
 @app_web.route('/')
 def index():
-    if session.get("discord_user"):
-        return send_from_directory('web', 'index.html')
-    return send_from_directory('web', 'login.html')
+    if not session.get("discord_user"):
+        return send_from_directory('web', 'login.html')
+    if not estado_postulaciones["abierto"]:
+        return send_from_directory('web', 'cerrado.html')
+    return send_from_directory('web', 'index.html')
 
 @app_web.route('/login')
 def login():
@@ -182,6 +184,7 @@ except:
     imagenes_config = {"imagen_aceptado": "", "imagen_rechazado": ""}
 
 postulaciones_activas = {}
+estado_postulaciones = {"abierto": True}
 
 def guardar_config():
     pass
@@ -499,6 +502,21 @@ class ConfirmarPostulacion(discord.ui.View):
 # ─────────────────────────────────────────
 #  EVENTOS Y COMANDOS
 # ─────────────────────────────────────────
+
+@bot.tree.command(name="abrir_postulaciones", description="Abre las postulaciones de staff")
+@app_commands.checks.has_permissions(administrator=True)
+async def abrir_postulaciones(interaction: discord.Interaction):
+    estado_postulaciones["abierto"] = True
+    embed = discord.Embed(title="✅ Postulaciones abiertas", description="Las postulaciones de staff están ahora **abiertas**.", color=discord.Color.green())
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+@bot.tree.command(name="cerrar_postulaciones", description="Cierra las postulaciones de staff")
+@app_commands.checks.has_permissions(administrator=True)
+async def cerrar_postulaciones(interaction: discord.Interaction):
+    estado_postulaciones["abierto"] = False
+    embed = discord.Embed(title="🔒 Postulaciones cerradas", description="Las postulaciones de staff están ahora **cerradas**.", color=discord.Color.red())
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
 @bot.event
 async def on_ready():
     print(f'✅ Bot conectado como {bot.user}')
