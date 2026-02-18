@@ -4,9 +4,21 @@ from discord import app_commands
 import asyncio
 import json
 import os
+import secrets
+import requests as http_requests
 from datetime import datetime, timedelta
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, send_from_directory, jsonify, request, redirect
 import threading
+
+# ─────────────────────────────────────────
+#  CONFIGURACIÓN OAUTH2 DISCORD
+# ─────────────────────────────────────────
+DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID", "")
+DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET", "")
+WEB_URL = os.environ.get("WEB_URL", "http://localhost:5000")
+REDIRECT_URI = f"{WEB_URL}/callback"
+
+sessions = {}  # Sesiones en memoria: session_id -> datos del usuario
 
 # ─────────────────────────────────────────
 #  SERVIDOR WEB (Flask)
@@ -24,6 +36,95 @@ def recibir_postulacion():
         return jsonify({"ok": False, "error": "Sin datos"}), 400
     postulaciones_web_pendientes.append(data)
     return jsonify({"ok": True})
+
+# ── RUTAS DE LOGIN CON DISCORD ──
+
+@app_web.route('/login')
+def login():
+    """Redirige al usuario a la página de autorización de Discord."""
+    state = secrets.token_hex(16)
+    url = (
+        f"https://discord.com/oauth2/authorize"
+        f"?client_id={DISCORD_CLIENT_ID}"
+        f"&redirect_uri={REDIRECT_URI}"
+        f"&response_type=code"
+        f"&scope=identify"
+        f"&state={state}"
+    )
+    return redirect(url)
+
+@app_web.route('/callback')
+def callback():
+    """Discord redirige aquí con el código de autorización."""
+    code = request.args.get('code')
+    if not code:
+        return "Error: no se recibió código de Discord.", 400
+
+    # Intercambiar código por access token
+    token_res = http_requests.post('https://discord.com/api/oauth2/token', data={
+        'client_id': DISCORD_CLIENT_ID,
+        'client_secret': DISCORD_CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': REDIRECT_URI,
+    })
+
+    if token_res.status_code != 200:
+        return f"Error al obtener token: {token_res.text}", 400
+
+    token_data = token_res.json()
+    access_token = token_data.get('access_token')
+
+    # Obtener info del usuario de Discord
+    user_res = http_requests.get('https://discord.com/api/users/@me', headers={
+        'Authorization': f'Bearer {access_token}'
+    })
+
+    if user_res.status_code != 200:
+        return "Error al obtener datos del usuario.", 400
+
+    user = user_res.json()
+
+    # Guardar sesión
+    session_id = secrets.token_hex(32)
+    sessions[session_id] = {
+        'id': user['id'],
+        'username': user['username'],
+        'global_name': user.get('global_name', user['username']),
+        'avatar': user.get('avatar'),
+        'discriminator': user.get('discriminator', '0'),
+    }
+
+    response = redirect('/')
+    response.set_cookie('session_id', session_id, httponly=True, max_age=60*60*24*7)  # 7 días
+    return response
+
+@app_web.route('/me')
+def me():
+    """Devuelve los datos del usuario logueado o indica que no está logueado."""
+    session_id = request.cookies.get('session_id')
+    user = sessions.get(session_id)
+    if not user:
+        return jsonify({"logged": False})
+    avatar_url = ""
+    if user.get('avatar'):
+        avatar_url = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+    return jsonify({
+        "logged": True,
+        "id": user['id'],
+        "username": user['username'],
+        "global_name": user['global_name'],
+        "avatar_url": avatar_url,
+    })
+
+@app_web.route('/logout')
+def logout():
+    """Cierra la sesión del usuario."""
+    session_id = request.cookies.get('session_id')
+    sessions.pop(session_id, None)
+    response = redirect('/')
+    response.delete_cookie('session_id')
+    return response
 
 def iniciar_servidor_web():
     port = int(os.environ.get('PORT', 5000))
@@ -61,7 +162,6 @@ except:
 postulaciones_activas = {}
 
 def guardar_config():
-    # Ya no se guarda en archivo, los cambios de IDs solo viven en memoria
     pass
 
 # ─────────────────────────────────────────
@@ -432,7 +532,7 @@ async def setup_postulaciones(interaction: discord.Interaction):
         ),
         color=discord.Color.red()
     )
-    
+
     view = discord.ui.View(timeout=None)
     view.add_item(discord.ui.Button(
         label="Postularse",
@@ -440,7 +540,7 @@ async def setup_postulaciones(interaction: discord.Interaction):
         url="https://minebackpostulaciones.up.railway.app/",
         emoji="🌐"
     ))
-    
+
     await interaction.response.send_message("✅ Configurado!", ephemeral=True)
     await interaction.channel.send(embed=embed, view=view)
 
