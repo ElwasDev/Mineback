@@ -188,12 +188,21 @@
         <textarea name="p2" placeholder="Answer here.." required></textarea>
       </div>
       <div class="field-group">
-        <label><span class="num">3</span> ¿Eres Premium? <small style="color:var(--muted)">Si tienes cuenta premium pon (SI) si no es así pon (NO)</small></label>
-        <textarea name="p3" placeholder="Answer here.." required></textarea>
+        <label><span class="num">3</span> ¿Eres Premium?</label>
+        <select name="p3" required>
+          <option value="" disabled selected>Selecciona...</option>
+          <option value="Sí">✅ Sí</option>
+          <option value="No">❌ No</option>
+        </select>
       </div>
       <div class="field-group">
         <label><span class="num">4</span> ¿Eres jugador de Java o Bedrock?</label>
-        <textarea name="p4" placeholder="Answer here.." required></textarea>
+        <select name="p4" required>
+          <option value="" disabled selected>Selecciona...</option>
+          <option value="Java">☕ Java</option>
+          <option value="Bedrock">📱 Bedrock</option>
+          <option value="Ambos">⚡ Ambos</option>
+        </select>
       </div>
       <div class="field-group">
         <label><span class="num">5</span> ¿De qué país eres?</label>
