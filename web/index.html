@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Postulaciones Staff — MineBack</title>
+<title>Postulaciones Staff — MineDash</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -48,8 +48,6 @@
     pointer-events: none;
     z-index: 0;
   }
-
-  /* ── NAV ── */
   nav {
     position: sticky; top: 0; z-index: 100;
     background: rgba(10,10,10,0.9);
@@ -62,8 +60,6 @@
   .nav-logo span { color: var(--text); }
   .nav-breadcrumb { font-size: 0.85rem; color: var(--muted); letter-spacing: 1px; }
   .nav-breadcrumb a { color: var(--red); text-decoration: none; }
-
-  /* ── USER WIDGET ── */
   .nav-user {
     display: flex;
     align-items: center;
@@ -76,59 +72,29 @@
     transform: translateX(10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
-  .nav-user.loaded {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  .nav-user.loaded { opacity: 1; transform: translateX(0); }
   .nav-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid var(--red);
-    object-fit: cover;
-    flex-shrink: 0;
-    background: var(--bg3);
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--red); object-fit: cover;
+    flex-shrink: 0; background: var(--bg3);
   }
   .nav-username {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: 0.5px;
-    max-width: 120px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.82rem; font-weight: 600; color: var(--text);
+    letter-spacing: 0.5px; max-width: 120px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .nav-divider {
-    width: 1px;
-    height: 16px;
-    background: var(--border);
-    flex-shrink: 0;
-  }
+  .nav-divider { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
   .btn-logout {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'Orbitron', monospace;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 2px 0;
-    transition: color 0.2s;
-    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; color: var(--muted);
+    font-family: 'Orbitron', monospace; font-size: 0.6rem;
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; padding: 2px 0; transition: color 0.2s; text-decoration: none;
   }
   .btn-logout:hover { color: var(--red); }
   .btn-logout svg { width: 12px; height: 12px; flex-shrink: 0; }
-
-  /* ── NAV SKELETON while loading ── */
   .nav-skeleton {
-    width: 130px; height: 40px;
-    border-radius: 40px;
+    width: 130px; height: 40px; border-radius: 40px;
     background: linear-gradient(90deg, var(--bg3) 25%, #222 50%, var(--bg3) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.2s infinite;
@@ -137,8 +103,6 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-
-  /* ── MAIN CONTENT (unchanged from original) ── */
   main { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
   .hero { text-align: center; margin-bottom: 3rem; animation: fadeDown 0.6s ease both; }
   @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -216,10 +180,9 @@
 <body>
 
 <nav>
-  <div class="nav-logo">Mine<span>Back</span></div>
+  <div class="nav-logo">Mine<span>Dash</span></div>
   <div class="nav-breadcrumb"><a href="#">Inicio</a> / Postulaciones Staff</div>
 
-  <!-- User widget: shows skeleton → then real data -->
   <div id="nav-user-skeleton" class="nav-skeleton"></div>
   <div class="nav-user" id="nav-user-widget">
     <img class="nav-avatar" id="nav-avatar" src="" alt="avatar">
@@ -239,7 +202,7 @@
 <main>
   <div class="hero">
     <div class="hero-badge">⚡ Reclutamiento Activo</div>
-    <h1>Postulaciones para<br><span>Staff MineBack</span></h1>
+    <h1>Postulaciones para<br><span>Staff MineDash</span></h1>
     <p class="hero-sub">¿Tienes lo que se necesita? Completa el formulario con honestidad y detalle. Cada respuesta cuenta.</p>
   </div>
 
@@ -305,7 +268,7 @@
         <textarea name="p5" placeholder="Answer here.." required></textarea>
       </div>
       <div class="field-group">
-        <label><span class="num">6</span> ¿Cuánto tiempo le podrías dedicar al servidor de MineBack?</label>
+        <label><span class="num">6</span> ¿Cuánto tiempo le podrías dedicar al servidor de MineDash?</label>
         <textarea name="p6" placeholder="Answer here.." required></textarea>
       </div>
       <div class="field-group">
@@ -317,7 +280,7 @@
         <textarea name="p8" placeholder="Answer here.." required></textarea>
       </div>
       <div class="field-group">
-        <label><span class="num">9</span> ¿Hace cuanto tiempo juegas MineBack | Network?</label>
+        <label><span class="num">9</span> ¿Hace cuanto tiempo juegas MineDash | Network?</label>
         <textarea name="p9" placeholder="Answer here.." required></textarea>
       </div>
       <div class="field-group">
@@ -393,7 +356,6 @@
 </div>
 
 <script>
-  // ── Cargar datos del usuario desde /me ──
   (async () => {
     const skeleton = document.getElementById('nav-user-skeleton');
     const widget   = document.getElementById('nav-user-widget');
@@ -424,7 +386,6 @@
     }
   })();
 
-  // ── Verificar si ya envio postulacion ──
   (async () => {
     try {
       const res  = await fetch('/ya_postulo');
@@ -477,14 +438,13 @@
       </div>`;
   }
 
-  // ── Formulario ──
   const form  = document.getElementById("postulacion-form");
   const btn   = document.getElementById("submit-btn");
   const toast = document.getElementById("toast");
 
   function showToast(type, title, msg) {
     toast.className = "toast " + type;
-    document.getElementById("toast-icon").textContent  = type === "success" ? "?" : "?";
+    document.getElementById("toast-icon").textContent  = type === "success" ? "✅" : "❌";
     document.getElementById("toast-title").textContent = title;
     document.getElementById("toast-msg").textContent   = msg;
     toast.classList.add("show");
